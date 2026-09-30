@@ -21,6 +21,9 @@ type Config struct {
 	MigrationStateFile string
 	ResumeMigration    bool
 	MigrationTimeout   time.Duration
+	// InsecureSkipTLSVerify disables TLS certificate verification for this
+	// tool's own connections to GitLab and Gitea.
+	InsecureSkipTLSVerify bool
 }
 
 // LoadConfig loads configuration from environment variables
@@ -73,6 +76,15 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
+	insecureSkipTLSVerify := false
+	if v := os.Getenv("INSECURE_SKIP_TLS_VERIFY"); v != "" {
+		var err error
+		insecureSkipTLSVerify, err = strconv.ParseBool(v)
+		if err != nil {
+			return nil, errors.New("INSECURE_SKIP_TLS_VERIFY must be a boolean value")
+		}
+	}
+
 	return &Config{
 		GitLabURL:          gitlabURL,
 		GitLabToken:        gitlabToken,
@@ -83,5 +95,7 @@ func LoadConfig() (*Config, error) {
 		MigrationStateFile: migrationStateFile,
 		ResumeMigration:    resumeMigration,
 		MigrationTimeout:   migrationTimeout,
+
+		InsecureSkipTLSVerify: insecureSkipTLSVerify,
 	}, nil
 }
