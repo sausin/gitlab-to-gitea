@@ -88,6 +88,18 @@ func NewClient(baseURL, token string) (*Client, error) {
 	}, nil
 }
 
+// WithTimeout returns a copy of the client whose requests use the given
+// timeout. A zero timeout disables the timeout entirely.
+func (c *Client) WithTimeout(timeout time.Duration) *Client {
+	httpClient := *c.httpClient
+	httpClient.Timeout = timeout
+	return &Client{
+		baseURL:    c.baseURL,
+		httpClient: &httpClient,
+		token:      c.token,
+	}
+}
+
 // Add a custom transport to handle CSRF tokens
 type CSRFTokenTransport struct {
 	Token     string

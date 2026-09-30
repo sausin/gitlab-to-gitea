@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"strconv"
+	"time"
 )
 
 // Config holds all configuration parameters for the migration
@@ -19,6 +20,7 @@ type Config struct {
 	GiteaToken         string
 	MigrationStateFile string
 	ResumeMigration    bool
+	MigrationTimeout   time.Duration
 }
 
 // LoadConfig loads configuration from environment variables
@@ -59,6 +61,18 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
+	// Timeout for a single repository migration request. Gitea's native
+	// migration is synchronous and imports issues, merge requests, releases,
+	// wiki and LFS, so large projects can take a long time.
+	migrationTimeout := 2 * time.Hour
+	if v := os.Getenv("MIGRATION_TIMEOUT"); v != "" {
+		var err error
+		migrationTimeout, err = time.ParseDuration(v)
+		if err != nil {
+			return nil, errors.New("MIGRATION_TIMEOUT must be a duration (e.g. 2h, 90m)")
+		}
+	}
+
 	return &Config{
 		GitLabURL:          gitlabURL,
 		GitLabToken:        gitlabToken,
@@ -68,5 +82,6 @@ func LoadConfig() (*Config, error) {
 		GiteaToken:         giteaToken,
 		MigrationStateFile: migrationStateFile,
 		ResumeMigration:    resumeMigration,
+		MigrationTimeout:   migrationTimeout,
 	}, nil
 }
